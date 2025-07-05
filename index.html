@@ -1016,41 +1016,45 @@
   </div>
 
   <script>
-    // Variables globales
-    // En la sección de script del frontend
-    // Variables globales
     let perfiles = [];
     let perfilActual = null;
     let modoEdicion = false;
     let isAdmin = false;
-
-    // Configuración de la API - ¡IMPORTANTE AJUSTAR ESTO!
+    
+    // Configuración de la API - ¡CORREGIDO!
     const API_URL = "https://recruitmentalbionback.onrender.com/api";
     const API_KEY = "AlmasDeAvalonArgentinoRoca";
 
-    // Función para hacer peticiones API
+    // Función para hacer peticiones API - ¡MEJORADA!
     async function fetchAPI(endpoint, method = 'GET', body = null) {
-      const url = `${API_URL}/${endpoint}`;
+      const url = `${API_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
       const options = {
         method,
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
           'X-API-Key': API_KEY
         }
       };
-
+      
       if (body) options.body = JSON.stringify(body);
-
+      
       try {
         const response = await fetch(url, options);
-
-        // Manejar errores de respuesta
+        
+        // Verificar si la respuesta es exitosa
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Error en la solicitud');
+          // Intentar obtener el mensaje de error
+          try {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+          } catch (e) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+          }
         }
-
-        return await response.json();
+        
+        // Solo intentar parsear JSON si hay contenido
+        const text = await response.text();
+        return text ? JSON.parse(text) : {};
       } catch (error) {
         console.error('API Error:', error);
         alert(`Error de conexión: ${error.message}`);
@@ -1058,38 +1062,39 @@
       }
     }
 
-    // ... el resto del código permanece igual ...
-
     // Cargar perfiles desde el backend
     async function cargarPerfilesDesdeBackend() {
-      const data = await fetchAPI('profiles');
-      if (data) {
-        perfiles = data;
-      } else {
+      try {
+        const data = await fetchAPI('/profiles');
+        if (data && data.profiles) {
+          perfiles = data.profiles;
+        } else {
+          perfiles = [];
+        }
+        cargarPerfiles();
+      } catch (error) {
+        console.error('Error cargando perfiles:', error);
         perfiles = [];
+        cargarPerfiles();
       }
-      cargarPerfiles();
     }
 
     // Guardar perfil en el backend
     async function guardarPerfilBackend(perfil) {
       // Asignar creador como "admin"
       perfil.creador = "admin";
-
-      await fetchAPI('profiles', 'POST', perfil);
-      await cargarPerfilesDesdeBackend();
+      
+      return await fetchAPI('/profiles', 'POST', perfil);
     }
 
     // Actualizar perfil en el backend
     async function actualizarPerfilBackend(perfil) {
-      await fetchAPI('profiles', 'POST', perfil);
-      await cargarPerfilesDesdeBackend();
+      return await fetchAPI('/profiles', 'POST', perfil);
     }
 
     // Eliminar perfil en el backend
     async function eliminarPerfilBackend(id) {
-      await fetchAPI(`profiles/${id}`, 'DELETE');
-      await cargarPerfilesDesdeBackend();
+      return await fetchAPI(`/profiles/${id}`, 'DELETE');
     }
 
     // Inicializar eventos
