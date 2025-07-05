@@ -1021,11 +1021,11 @@
     let modoEdicion = false;
     let isAdmin = false;
     
-    // Configuración de la API - ¡CORREGIDO!
+    // Configuración de la API
     const API_URL = "https://recruitmentalbionback.onrender.com/api";
     const API_KEY = "AlmasDeAvalonArgentinoRoca";
 
-    // Función para hacer peticiones API - ¡MEJORADA!
+    // Función para hacer peticiones API - MEJORADA
     async function fetchAPI(endpoint, method = 'GET', body = null) {
       const url = `${API_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
       const options = {
@@ -1041,24 +1041,27 @@
       try {
         const response = await fetch(url, options);
         
-        // Verificar si la respuesta es exitosa
-        if (!response.ok) {
-          // Intentar obtener el mensaje de error
-          try {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
-          } catch (e) {
-            throw new Error(`Error ${response.status}: ${response.statusText}`);
-          }
+        // Manejar respuestas vacías
+        if (response.status === 204) {
+          return null;
         }
         
-        // Solo intentar parsear JSON si hay contenido
-        const text = await response.text();
-        return text ? JSON.parse(text) : {};
+        // Verificar errores de autenticación
+        if (response.status === 401) {
+          throw new Error('Unauthorized');
+        }
+        
+        // Verificar otros errores HTTP
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || `Error ${response.status}`);
+        }
+        
+        return await response.json();
       } catch (error) {
         console.error('API Error:', error);
         alert(`Error de conexión: ${error.message}`);
-        return null;
+        throw error;
       }
     }
 
@@ -1066,11 +1069,7 @@
     async function cargarPerfilesDesdeBackend() {
       try {
         const data = await fetchAPI('/profiles');
-        if (data && data.profiles) {
-          perfiles = data.profiles;
-        } else {
-          perfiles = [];
-        }
+        perfiles = data?.profiles || [];
         cargarPerfiles();
       } catch (error) {
         console.error('Error cargando perfiles:', error);
@@ -1089,7 +1088,7 @@
 
     // Actualizar perfil en el backend
     async function actualizarPerfilBackend(perfil) {
-      return await fetchAPI('/profiles', 'POST', perfil);
+      return await fetchAPI(`/profiles/${perfil.id}`, 'PUT', perfil);
     }
 
     // Eliminar perfil en el backend
@@ -1099,6 +1098,14 @@
 
     // Inicializar eventos
     document.addEventListener('DOMContentLoaded', async function () {
+      // Verificar si ya está autenticado
+      isAdmin = localStorage.getItem('isAdmin') === 'true';
+      if (isAdmin) {
+        document.getElementById('loginView').classList.remove('active');
+        document.getElementById('appView').classList.add('active');
+        document.getElementById('userDisplay').textContent = "Administrador";
+      }
+      
       // Evento para subir imagen
       document.getElementById('imageUpload').addEventListener('click', function () {
         document.getElementById('characterImage').click();
@@ -1165,6 +1172,7 @@
 
       errorElement.style.display = 'none';
       isAdmin = true;
+      localStorage.setItem('isAdmin', 'true');
 
       // Actualizar interfaz
       document.getElementById('loginView').classList.remove('active');
@@ -1177,6 +1185,7 @@
       document.getElementById('appView').classList.remove('active');
       document.getElementById('loginView').classList.add('active');
       isAdmin = false;
+      localStorage.removeItem('isAdmin');
 
       // Limpiar campo de usuario
       document.getElementById('usernameInput').value = '';
@@ -1357,10 +1366,16 @@
         respuestas
       };
 
-      // Guardar en backend
-      await guardarPerfilBackend(nuevoPerfil);
-      alert('Recluta guardado exitosamente');
-      ocultarFormulario();
+      try {
+        // Guardar en backend
+        await guardarPerfilBackend(nuevoPerfil);
+        alert('Recluta guardado exitosamente');
+        ocultarFormulario();
+        // Recargar perfiles
+        await cargarPerfilesDesdeBackend();
+      } catch (error) {
+        alert('Error al guardar: ' + error.message);
+      }
     }
 
     async function actualizarPerfil() {
@@ -1418,10 +1433,16 @@
       perfilActual.imagen = imagen;
       perfilActual.respuestas = respuestas;
 
-      // Guardar en backend
-      await actualizarPerfilBackend(perfilActual);
-      alert('Perfil actualizado exitosamente');
-      ocultarFormulario();
+      try {
+        // Guardar en backend
+        await actualizarPerfilBackend(perfilActual);
+        alert('Perfil actualizado exitosamente');
+        ocultarFormulario();
+        // Recargar perfiles
+        await cargarPerfilesDesdeBackend();
+      } catch (error) {
+        alert('Error al actualizar: ' + error.message);
+      }
     }
 
     async function eliminarPerfil() {
@@ -1434,10 +1455,16 @@
         return;
       }
 
-      // Eliminar en backend
-      await eliminarPerfilBackend(perfilActual.id);
-      alert('Perfil eliminado correctamente');
-      ocultarDetalle();
+      try {
+        // Eliminar en backend
+        await eliminarPerfilBackend(perfilActual.id);
+        alert('Perfil eliminado correctamente');
+        ocultarDetalle();
+        // Recargar perfiles
+        await cargarPerfilesDesdeBackend();
+      } catch (error) {
+        alert('Error al eliminar: ' + error.message);
+      }
     }
 
     function buscarPerfiles(termino) {
@@ -1571,9 +1598,15 @@
         return;
       }
 
-      // Eliminar en backend
-      await eliminarPerfilBackend(id);
-      alert('Perfil eliminado correctamente');
+      try {
+        // Eliminar en backend
+        await eliminarPerfilBackend(id);
+        alert('Perfil eliminado correctamente');
+        // Recargar perfiles
+        await cargarPerfilesDesdeBackend();
+      } catch (error) {
+        alert('Error al eliminar: ' + error.message);
+      }
     }
   </script>
 </body>
