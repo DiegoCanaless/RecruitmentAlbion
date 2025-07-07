@@ -428,3 +428,44 @@ function eliminarPerfilDirecto(id) {
   alert('Perfil eliminado correctamente');
   cargarPerfilesDesdeLocal();
 }
+
+function exportarPerfiles() {
+  const dataStr = JSON.stringify(perfiles, null, 2);
+  const blob = new Blob([dataStr], {type: "application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "perfiles_albion.json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('importFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const json = JSON.parse(evt.target.result);
+      if (!Array.isArray(json)) throw new Error("Formato inválido");
+      if(confirm('¿Reemplazar TODOS los perfiles actuales por los importados? (Aceptar = reemplaza, Cancelar = agrega)')) {
+        perfiles = json;
+      } else {
+        // Agrega solo los nuevos (evita duplicados por id)
+        const existentes = new Set(perfiles.map(p => p.id));
+        json.forEach(p => {
+          if(!existentes.has(p.id)) perfiles.push(p);
+        });
+      }
+      guardarPerfilesEnLocal();
+      cargarPerfilesDesdeLocal();
+      alert("Perfiles importados correctamente.");
+    } catch(err) {
+      alert("Error al importar: " + err.message);
+    }
+    e.target.value = ''; // Limpiar para poder volver a importar si quiere
+  };
+  reader.readAsText(file);
+});

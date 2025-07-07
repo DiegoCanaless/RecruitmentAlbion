@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
   <div class="container">
     <div class="header">
@@ -22,7 +24,8 @@
         <div class="error-message" id="loginError">Solo el usuario "admin" puede acceder</div>
       </div>
       <button class="login-btn" onclick="login()">Entrar al Sistema</button>
-      <div style="margin-top: 30px; padding: 20px; background: rgba(20,20,20,0.7); border-radius: 8px; max-width: 600px; margin: 30px auto;">
+      <div
+        style="margin-top: 30px; padding: 20px; background: rgba(20,20,20,0.7); border-radius: 8px; max-width: 600px; margin: 30px auto;">
         <h3 style="color: var(--albion-gold); margin-bottom: 15px;">Requisitos Mínimos</h3>
         <div style="display: flex; flex-wrap: wrap; justify-content: center;">
           <span class="gold-border">1M Fama PVP</span>
@@ -59,6 +62,13 @@
             <button class="btn btn-logout" onclick="logout()">
               <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
             </button>
+            <button class="btn" onclick="exportarPerfiles()" style="margin-top:10px;width:100%">
+              <i class="fas fa-download"></i> Exportar Perfiles
+            </button>
+            <label class="btn" style="margin-top:10px;width:100%;cursor:pointer;">
+              <i class="fas fa-upload"></i> Importar Perfiles
+              <input type="file" id="importFile" accept=".json" style="display:none;">
+            </label>
           </div>
         </div>
         <div class="content-panel">
@@ -261,7 +271,8 @@
               <h3>Lymhurst</h3>
               <div class="perfil-info"><strong>Ciudad:</strong> <span>Lymhurst</span></div>
               <div class="perfil-info"><strong>HO:</strong> <span>En proceso de obtención</span></div>
-              <div class="perfil-info"><strong>Actividades:</strong> <span>ZvZ, Mediana Escala, Gankeo, HCE, Avalon</span></div>
+              <div class="perfil-info"><strong>Actividades:</strong> <span>ZvZ, Mediana Escala, Gankeo, HCE,
+                  Avalon</span></div>
               <div class="perfil-info"><strong>Main Timer:</strong> <span>20:00 - 06:00 UTC</span></div>
               <div class="perfil-info"><strong>Contacto:</strong> <span>Ozhon o Ghrekor</span></div>
             </div>
@@ -301,4 +312,5 @@
   </div>
   <script src="script.js"></script>
 </body>
+
 </html>
